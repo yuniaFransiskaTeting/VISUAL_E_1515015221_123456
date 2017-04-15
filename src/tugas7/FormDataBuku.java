@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tugas6;
+package tugas7;
 
 import java.sql.*;
 import javax.swing.JOptionPane;
@@ -24,6 +24,8 @@ public class FormDataBuku extends javax.swing.JFrame {
     /**
      * Creates new form koneksi
      */
+     private int baris;
+private boolean cek=true;
     public FormDataBuku() {
         initComponents();
        
@@ -31,6 +33,7 @@ public class FormDataBuku extends javax.swing.JFrame {
     
     public void InitTable(){
         model = new DefaultTableModel();
+        model.addColumn("ID BUKU");
         model.addColumn("JUDUL");
         model.addColumn("PENULIS");
         model.addColumn("HARGA");
@@ -44,15 +47,40 @@ public class FormDataBuku extends javax.swing.JFrame {
             stt = con.createStatement();
             rss = stt.executeQuery(sql);
                      while(rss.next()){
-                         Object[] o = new Object[3];
-                         o[0] = rss.getString("judul");
-                         o[1] = rss.getString("penulis");
-                         o[2] = rss.getString("harga");
+                         Object[] o = new Object[4];
+                         o[0] = rss.getString("id");
+                         o[1] = rss.getString("judul");
+                         o[2] = rss.getString("penulis");
+                         o[3] = rss.getInt("harga");
                          model.addRow(o);
                      }
         }catch(SQLException e){
         System.out.println(e.getMessage());;
     }
+    }
+    
+    public boolean UbahData(String id, String judul, String penulis, String harga){
+    try {
+        String sql = "update buku set judul='"+judul+"',penulis ='"+penulis+"', harga='"+harga+"' where id="+id+";";
+        stt = con.createStatement();
+        stt.executeUpdate(sql);
+        return true;
+    }    catch(SQLException e){
+        System.out.println(e.getMessage());
+        return false;
+    }
+    }
+    
+    public boolean HapusData(String id){
+        try{
+            String sql = "delete from buku where id="+id+";";
+            stt = con.createStatement();
+            stt.executeUpdate(sql);
+            return true;
+        } catch(SQLException e){
+            System.out.println(e.getMessage());;
+            return false;
+        }
     }
     
     private void TambahData(String judul, String penulis, String harga){
@@ -65,20 +93,57 @@ public class FormDataBuku extends javax.swing.JFrame {
             System.out.println(e.getMessage());
         }
            }
-        
-          private void hapus(){
+   
+        private void validasidata(String judul, String penulis, String harga) {//disini adalah sisi validasi dimana setiap data judul dan penulis yang masuk di huruf kecilkan
         try{
-            String sql = "select * from buku";
-            stt = con.createStatement();
-            rss = stt.executeQuery(sql);
+            String sql ="SELECT *FROM buku";//kita menampilkan dulu buku kemudian
+            stt = con.createStatement();//variabel menampung dari sql yang udah ditentukan
+            ResultSet rss = stt.executeQuery(sql);//variable penampung eksekusi pada sql
             while(rss.next()){
-                int baris=0;
-                model.removeRow(baris);
+                Object[] o = new Object[2];//membuat objek baru
+                o[0]=rss.getString("judul").toLowerCase();//disini adalah sisi dimana objek yang baru di masukkan dengan huruf kecil
+                o[1]=rss.getString("penulis").toLowerCase();//disini adalah sisi objek dimana mendapati tulisan dengan masukkan dibandingkan dengan sql yang sudah di huruf kecilkan
+                
+                if(o[0].equals(judul.toLowerCase())&&o[1].equals(penulis.toLowerCase())){
+                    JOptionPane.showMessageDialog(null,"DATA TELAH ADA");//untuk membandingkan dan mencegah data duplikat dimana judul dan pengarang yang sama berada di database yang sama maka jika nama pengarang dan judul yang sama maka akan muncul pemberitahuan bahwa data telah ada 
+                    cek=false;//dan nilai cek berubah menjadi false
+                    break;                    
+                }
+            }
+            if(cek==true){
+                TambahData(judul,penulis, harga);//ketika nilai cek masih bernilai benar maka akan lari ke method tambah data dimana data akan tersimpan
+            }
+        }catch(SQLException e){
+            System.out.println(e.getMessage());
+        }//jadi sebelum menyimpan data ada method validasi ini dimana gunanya mengecek dulu apakah sudah ada judul dan pengarang yang sama jika suddah ada maka data tidak bisa tersimpan tapi jika tidak ada buku yang kondisinya nama dan pengarang sama maka data akan tersimpan
+    }
+    private void caridata(String judul,String penulis){//disini saya membuat method untuk mencari judul dimana akan menampilkan data berdasarkan judul yang sama 
+         try{
+            //apa yang diketikkan pda field cari akan di lowercase kan 
+            String sql ="SELECT *FROM buku where "+judul+" LIKE '%"+penulis+"%'";
+            stt = con.createStatement();
+            ResultSet rss = stt.executeQuery(sql);
+            while(rss.next()){
+                Object[] o =new Object[4];
+                o[0]=rss.getInt("id");
+                o[1]=rss.getString("JUDUL").toLowerCase();//dari sisi judul pun juga akan mengecilkan huruf yang ada sehingga akan membandingkan sesama huruf kecil dan akan tetep ketemu biarpun beda kecilnya berbeda
+                o[2]=rss.getString("PENULIS").toLowerCase();
+                o[3]=rss.getInt("HARGA");
+                model.addRow(o);
             }
         }catch(SQLException e){
             System.out.println(e.getMessage());
         }
     }
+
+    
+
+    
+    
+   
+    
+   
+        
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -106,6 +171,7 @@ public class FormDataBuku extends javax.swing.JFrame {
         jToggleButton4 = new javax.swing.JToggleButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
+        jLabel5 = new javax.swing.JLabel();
         txt_cari = new javax.swing.JTextField();
         combocari = new javax.swing.JComboBox<>();
         jLabel6 = new javax.swing.JLabel();
@@ -124,16 +190,15 @@ public class FormDataBuku extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(jTable1);
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentShown(java.awt.event.ComponentEvent evt) {
                 formComponentShown(evt);
             }
         });
 
-        jPanel1.setBackground(new java.awt.Color(102, 102, 255));
+        jPanel1.setBackground(new java.awt.Color(255, 153, 153));
 
-        jLabel1.setFont(new java.awt.Font("Times New Roman", 1, 18)); // NOI18N
         jLabel1.setText("FORM DATA BUKU");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -148,23 +213,19 @@ public class FormDataBuku extends javax.swing.JFrame {
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(12, Short.MAX_VALUE)
                 .addComponent(jLabel1)
                 .addContainerGap())
         );
 
-        jPanel2.setBackground(new java.awt.Color(102, 102, 255));
+        jPanel2.setBackground(new java.awt.Color(255, 153, 153));
 
-        jLabel2.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jLabel2.setText("Judul");
 
-        jLabel3.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jLabel3.setText("Penulis");
 
-        jLabel4.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jLabel4.setText("Harga");
 
-        combopenulis.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         combopenulis.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tere Liye", "W.S. Rendra", "Felix Slauw", "Asma Nadia", "Dewi Lestari" }));
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -209,7 +270,6 @@ public class FormDataBuku extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jToggleButton1.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jToggleButton1.setText("simpan");
         jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -217,13 +277,20 @@ public class FormDataBuku extends javax.swing.JFrame {
             }
         });
 
-        jToggleButton2.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jToggleButton2.setText("ubah");
+        jToggleButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton2ActionPerformed(evt);
+            }
+        });
 
-        jToggleButton3.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jToggleButton3.setText("hapus");
+        jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton3ActionPerformed(evt);
+            }
+        });
 
-        jToggleButton4.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jToggleButton4.setText("keluar");
         jToggleButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -231,8 +298,6 @@ public class FormDataBuku extends javax.swing.JFrame {
             }
         });
 
-        jTable2.setBackground(new java.awt.Color(255, 255, 102));
-        jTable2.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
         jTable2.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null},
@@ -244,30 +309,31 @@ public class FormDataBuku extends javax.swing.JFrame {
                 "judul", "penulis", "harga"
             }
         ));
+        jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable2MouseClicked(evt);
+            }
+        });
         jScrollPane2.setViewportView(jTable2);
 
-        txt_cari.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
+        jLabel5.setText("Search :");
+
         txt_cari.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txt_cariActionPerformed(evt);
             }
         });
 
-        combocari.setBackground(new java.awt.Color(51, 255, 204));
-        combocari.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
-        combocari.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "judul", "penulis" }));
+        combocari.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "judul", "penulis", "harga" }));
         combocari.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 combocariActionPerformed(evt);
             }
         });
 
-        jLabel6.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
-        jLabel6.setText("by :");
+        jLabel6.setText("by:");
 
-        cari.setBackground(new java.awt.Color(51, 255, 204));
-        cari.setFont(new java.awt.Font("Times New Roman", 0, 14)); // NOI18N
-        cari.setText("Search");
+        cari.setText("SEARCH");
         cari.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cariActionPerformed(evt);
@@ -282,29 +348,30 @@ public class FormDataBuku extends javax.swing.JFrame {
                 .addGap(23, 23, 23)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txt_cari))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                 .addComponent(jToggleButton1)
                                 .addGap(10, 10, 10)
                                 .addComponent(jToggleButton2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jToggleButton3))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(txt_cari, javax.swing.GroupLayout.PREFERRED_SIZE, 162, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(cari)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jToggleButton3)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jToggleButton4)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel6)
-                                .addGap(18, 18, 18)
-                                .addComponent(combocari, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE))
+                                .addComponent(cari)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel6)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(combocari, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addGap(44, 44, 44))
+                .addGap(54, 54, 54))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -321,13 +388,14 @@ public class FormDataBuku extends javax.swing.JFrame {
                     .addComponent(jToggleButton4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel5)
                     .addComponent(txt_cari, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(combocari, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6)
                     .addComponent(cari))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(12, Short.MAX_VALUE))
+                .addContainerGap(16, Short.MAX_VALUE))
         );
 
         pack();
@@ -341,16 +409,25 @@ public class FormDataBuku extends javax.swing.JFrame {
 
     private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
         // TODO add your handling code here:
-        //tombol simpan
-        String judul = txtjudul.getText(); 
-        String penulis = combopenulis.getSelectedItem().toString();
-        String harga = txtharga.getText();
-        TambahData(judul,penulis,harga);
+       if(txtjudul.getText().equals("")||txtharga.getText().equals("")){
+         JOptionPane.showMessageDialog(null,"DATA BELUM LENGKAP","Danger!!",JOptionPane.INFORMATION_MESSAGE);
+         txtjudul.requestFocus();//apabila field harga dan judul kosong maka akan muncul pemberitahuan bahwa masih ada data yang kosong.
+     }
+        String judul = txtjudul.getText();
+      String penulis = combopenulis.getSelectedItem().toString();
+      String harga = txtharga.getText();
+     
+      validasidata(judul,penulis,harga);
+      
+      InitTable();
+      TampilData();
+      txtjudul.setText("");
+      combopenulis.getSelectedItem();
+      txtharga.setText("");
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     private void jToggleButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton4ActionPerformed
         // TODO add your handling code here:
-        //tombol keluar
         System.exit(0);
     }//GEN-LAST:event_jToggleButton4ActionPerformed
 
@@ -361,66 +438,53 @@ public class FormDataBuku extends javax.swing.JFrame {
     private void combocariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_combocariActionPerformed
         // TODO add your handling code here:
         
-   
     }//GEN-LAST:event_combocariActionPerformed
+
+    private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
+        // TODO add your handling code here:
+        int baris = jTable2.getSelectedRow();
+        
+        txtjudul.setText(jTable2.getValueAt(baris, 1).toString());
+        combopenulis.setSelectedItem(jTable2.getValueAt(baris, 2).toString());
+        txtharga.setText(jTable2.getValueAt(baris, 3).toString());
+        
+    }//GEN-LAST:event_jTable2MouseClicked
+
+    private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
+        // TODO add your handling code here:
+        int baris = jTable2.getSelectedRow();
+        String id= jTable2.getValueAt(baris, 0).toString();
+        String judul = txtjudul.getText();
+        String penulis = combopenulis.getSelectedItem().toString();
+        String harga = txtharga.getText();
+        if (UbahData(id, judul, penulis, harga))
+            JOptionPane.showMessageDialog(null, "berhasil ubah data");
+        else
+            JOptionPane.showMessageDialog(null, "gagal ubah data");
+        InitTable(); TampilData();
+    }//GEN-LAST:event_jToggleButton2ActionPerformed
+
+    private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
+        // TODO add your handling code here:
+        int baris = jTable2.getSelectedRow();
+        String id = jTable2.getValueAt(baris, 0).toString();
+        if(HapusData(id))
+           JOptionPane.showMessageDialog(null, "berhasil Hapus data");
+        else
+            JOptionPane.showMessageDialog(null, "gagal Hapus Data");
+        InitTable(); TampilData();
+    }//GEN-LAST:event_jToggleButton3ActionPerformed
 
     private void cariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cariActionPerformed
         // TODO add your handling code here:
-             //tombol cari
-        //disini pencarian ditentukan dapat berdasarkan judul buku ataupun pengarang buku, dengan sistem query like
-   
-        if (combocari.getSelectedItem().equals("judul")){
-        try {
-            Statement st = con.createStatement();   //statement yang digunakan untuk menghubungkan atau mengkoneksikan ke database
-            String judul =  txt_cari.getText();   // untuk mengambil atau mendapatkan perintah pencarian yang dimasukan pada text field cari
-            ResultSet rs = st.executeQuery("select *from buku where judul like'%"+judul+"%'"); // yang di eksekusi pada table buku di database yang dihubungkan
-            DefaultTableModel dtm = (DefaultTableModel) jTable2.getModel(); // dan ditampilkan pada table yang disediakan
-            
-            dtm.setRowCount(0);
-            String [] data = new String [3];
-            int i = 1;
-            
-            while(rs.next())
-            { //untuk menampilkan data mana saja yang kemungkinan sama seperti yang dicari
-                data[0] = rs.getString("judul"); 
-                data[1] = rs.getString("penulis");
-                data[2] = rs.getString("harga");
-                dtm.addRow(data);
-                i++;
-                
-            } rs.close();
-        }    
-        catch(Exception e){
-            JOptionPane.showMessageDialog(null, "data yang ada cari tidak ditemukan", "kesalahan", JOptionPane.WARNING_MESSAGE);
-            
-        }
-        }
-        else if (combocari.getSelectedItem().equals("penulis"))
-        {
-        try {
-            Statement st = con.createStatement();
-            String Penulis =  txt_cari.getText();
-            ResultSet rs = st.executeQuery("select *from buku where penulis like'%"+Penulis+"%'");
-            DefaultTableModel dtm = (DefaultTableModel) jTable2.getModel();
-            
-            dtm.setRowCount(0);
-            String [] data = new String [6];
-            int i = 1;
-            
-            while(rs.next())
-            {
-                data[0] = rs.getString("judul");
-                data[1] = rs.getString("penulis");
-                data[2] = rs.getString("harga");
-                dtm.addRow(data);
-                i++;
-                
-            } rs.close();
-        }    
-        catch(Exception e){
-            JOptionPane.showMessageDialog(null, "data yang ada cari tidak ditemukan", "kesalahan", JOptionPane.WARNING_MESSAGE);
-            
-        }
+         if(cari.getText().equals("")){
+            //pada button cari saat field dari cari masih kosong maka akan ada peringatan bahwa tombol cari masih kosong
+             JOptionPane.showMessageDialog(null,"MAU CARI APA ?","WARNING!!",JOptionPane.INFORMATION_MESSAGE);
+         }
+        else{
+            model.getDataVector().removeAllElements();
+        model.fireTableDataChanged();
+      caridata(combocari.getSelectedItem().toString(),cari.getText().toLowerCase());
         }
     }//GEN-LAST:event_cariActionPerformed
 
@@ -468,6 +532,7 @@ public class FormDataBuku extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
